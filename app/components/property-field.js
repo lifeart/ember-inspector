@@ -1,5 +1,5 @@
-import Ember from "ember";
-export default Ember.TextField.extend({
+import TextField from '@ember/component/text-field';
+export default TextField.extend({
   attributeBindings: ['label:data-label'],
 
   /**
@@ -12,7 +12,7 @@ export default Ember.TextField.extend({
   properyComponent: null,
 
   didInsertElement() {
-    this.$().select();
+    this.element.select();
     return this._super(...arguments);
   },
 

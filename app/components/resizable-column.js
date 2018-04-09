@@ -1,5 +1,6 @@
-import Ember from "ember";
-const { Component, computed, String: { htmlSafe } } = Ember;
+import Component from '@ember/component';
+import { computed } from '@ember/object';
+import { htmlSafe } from '@ember/string';
 export default Component.extend({
   width: null,
 
@@ -11,7 +12,7 @@ export default Component.extend({
 
   didInsertElement() {
     if (!this.get('width')) {
-      this.set('width', this.$().width());
+      this.set('width', this.element.clientWidth);
     }
   }
 });

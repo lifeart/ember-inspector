@@ -1,15 +1,16 @@
-import Ember from "ember";
+import { equal } from '@ember/object/computed';
+import Component from '@ember/component';
+import { computed } from '@ember/object';
+import { htmlSafe } from '@ember/string';
 
-const { computed, String: { htmlSafe } } = Ember;
-
-export default Ember.Component.extend({
+export default Component.extend({
   classNames: ['drag-handle'],
   classNameBindings: ['isLeft:drag-handle--left', 'isRight:drag-handle--right', 'faded:drag-handle--faded'],
   attributeBindings: ['style'],
   position: 0,
   side: '',
-  isRight: Ember.computed.equal('side', 'right'),
-  isLeft: Ember.computed.equal('side', 'left'),
+  isRight: equal('side', 'right'),
+  isLeft: equal('side', 'left'),
   minWidth: 60,
 
   /**
@@ -49,32 +50,18 @@ export default Ember.Component.extend({
   'on-drag'() {},
 
   startDragging() {
-    let $container = this.$().parent();
-    let $containerOffsetLeft = $container.offset().left;
-    let $containerOffsetRight = $containerOffsetLeft + $container.width();
-    let namespace = `drag-${this.get('elementId')}`;
+    let namespace = `drag-${this.elementId}`;
 
     this.sendAction('action', true);
 
-    Ember.$('body').on(`mousemove.${namespace}`, e => {
-      let position = this.get('isLeft') ?
-                       e.pageX - $containerOffsetLeft :
-                       $containerOffsetRight - e.pageX;
-
-      position -= this.get('left');
-      if (position >= this.get('minWidth') && position <= this.get('maxWidth')) {
-        this.set('position', position);
-        this.get('on-drag')(position);
-      }
-    })
-    .on(`mouseup.${namespace} mouseleave.${namespace}`, () => {
-      this.stopDragging();
-    });
+    document.body.addEventListener(`mousemove.${namespace}`, this._mouseMoveHandler);
+    document.body.addEventListener(`mouseup.${namespace} mouseleave.${namespace}`, this.stopDragging);
   },
 
   stopDragging() {
     this.sendAction('action', false);
-    Ember.$('body').off(`.drag-${this.get('elementId')}`);
+    document.body.removeEventListener(`.drag-${this.elementId}`, this._mouseMoveHandler);
+    document.body.removeEventListener(`.drag-${this.elementId}`, this.stopDragging);
   },
 
   willDestroyElement() {
@@ -87,7 +74,7 @@ export default Ember.Component.extend({
     return false;
   },
 
-  style: computed('side', 'position', 'left', function () {
+  style: computed('side', 'position', 'left', function() {
     let string;
     if (this.get('side')) {
       string = `${this.get('side')}: ${(this.get('position') + this.get('left'))}px;`;
@@ -95,5 +82,21 @@ export default Ember.Component.extend({
       string = '';
     }
     return htmlSafe(string);
-  })
+  }),
+
+  _mouseMoveHandler(e) {
+    let $container = this.element.parentNode;
+    let $containerOffsetLeft = $container.offset().left;
+    let $containerOffsetRight = $containerOffsetLeft + $container.width();
+
+    let position = this.get('isLeft') ?
+      e.pageX - $containerOffsetLeft :
+      $containerOffsetRight - e.pageX;
+
+    position -= this.get('left');
+    if (position >= this.get('minWidth') && position <= this.get('maxWidth')) {
+      this.set('position', position);
+      this.get('on-drag')(position);
+    }
+  }
 });

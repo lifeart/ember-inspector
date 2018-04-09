@@ -1,5 +1,6 @@
-import Ember from "ember";
-const { Component, run: { schedule }, $, inject: { service } } = Ember;
+import Component from '@ember/component';
+import { schedule } from '@ember/runloop';
+import { inject as service } from '@ember/service';
 import { task, timeout } from 'ember-concurrency';
 
 // Currently used to determine the height of list-views
@@ -14,9 +15,7 @@ export default Component.extend({
   layoutService: service('layout'),
 
   didInsertElement() {
-    $(window).on(`resize.view-${this.get('elementId')}`, () => {
-      this.get('updateHeightDebounce').perform();
-    });
+    window.addEventListener(`resize.view-${this.elementId}`, this._performUpdateHeight);
     schedule('afterRender', this, this.updateHeight);
     return this._super(...arguments);
   },
@@ -33,6 +32,10 @@ export default Component.extend({
     this.updateHeight();
   }).restartable(),
 
+  _performUpdateHeight() {
+    this.get('updateHeightDebounce').perform();
+  },
+
   /**
    * Update the layout's `contentHeight` property.
    * This will cause the layout service to trigger
@@ -45,11 +48,11 @@ export default Component.extend({
    * @method updateHeight
    */
   updateHeight() {
-    this.get('layoutService').updateContentHeight(this.$().height());
+    this.get('layoutService').updateContentHeight(this.element.clientHeight);
   },
 
   willDestroyElement() {
-    $(window).off(`.view-${this.get('elementId')}`);
+    window.removeEventListener(`.view-${this.elementId}`, this._performUpdateHeight);
     return this._super(...arguments);
   }
 });
