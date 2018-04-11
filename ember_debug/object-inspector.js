@@ -341,7 +341,11 @@ export default EmberObject.extend(PortMixin, {
       // for more details.
       if (compareVersion(VERSION, '2.11.0') !== -1) {
         if (!name && typeof mixin.toString === 'function') {
-          name = mixin.toString();
+          try {
+            name = mixin.toString();
+          } catch(e) {
+
+          }
         }
       }
       if (!name) {
@@ -473,10 +477,12 @@ function addProperties(properties, hash) {
     }
 
     if (isComputed(hash[prop])) {
-        options.dependentKeys = hash[prop]._dependentKeys;
+        options.dependentKeys = (hash[prop]._dependentKeys||[]).map((key)=>{
+          return key.toString();
+        });
         if (!options.isService) {
           if (typeof hash[prop]._getter === 'function') {
-            options.code = Function.prototype.toString.call(hash[prop]._getter)
+            options.code = Function.prototype.toString.call(hash[prop]._getter);
           } else {
             options.code = '';
           }
@@ -506,7 +512,7 @@ function replaceProperty(properties, name, value, options) {
   prop.isMandatorySetter = options.isMandatorySetter;
   prop.readOnly = options.readOnly;
   prop.dependentKeys = options.dependentKeys || [];
-  let hasServiceFootprint = prop.value && typeof inspect === 'string' ? prop.value.inspect.includes('@service:') : false;
+  let hasServiceFootprint = prop.value && typeof prop.value.inspect === 'string' ? prop.value.inspect.includes('@service:') : false;
   prop.isService = options.isService || hasServiceFootprint;
   prop.code = options.code;
   properties.push(prop);
